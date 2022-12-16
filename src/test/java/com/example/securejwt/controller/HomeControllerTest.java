@@ -10,7 +10,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import java.nio.charset.StandardCharsets;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -26,30 +28,47 @@ class HomeControllerTest {
 
 
     @Test
-    void rootWhenUnauthenticatedThen401() throws Exception {
+    void whenUnauthenticatedThen401() throws Exception {
         this.mvc.perform(get("/"))
+                .andExpect(status().isUnauthorized());
+
+        this.mvc.perform(get("/secure"))
                 .andExpect(status().isUnauthorized());
     }
 
+
+
     @Test
-    void rootWhenAuthenticatedThenSaysHelloUser() throws Exception {
+    void authenticateUserAndCheckSecured200() throws Exception {
+
         MvcResult result = this.mvc.perform(post("/token")
-                .with(httpBasic("michal", "password")))
+                        .contentType(APPLICATION_JSON_VALUE)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .content("{\"username\": \"Michal\",\"password\": \"password\"}"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         String token = result.getResponse().getContentAsString();
 
         this.mvc.perform(get("/")
-                .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(content().string("Hello, michal"));
+
+        this.mvc.perform(get("/secure")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
     }
 
 
     @Test
     @WithMockUser
-    public void rootWithMockUserStatusIsOK() throws Exception {
+    public void mockUserStatusIsOK() throws Exception {
         this.mvc.perform(get("/")).andExpect(status().isOk());
+
+        this.mvc.perform(get("/secure")).andExpect(status().isOk());
     }
+
+
 
 }

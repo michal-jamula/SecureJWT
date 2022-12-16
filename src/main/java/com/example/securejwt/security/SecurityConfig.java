@@ -2,10 +2,8 @@ package com.example.securejwt.security;
 
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -34,14 +31,15 @@ public class SecurityConfig {
 
     private RSAKey rsaKey;
 
-    @Bean public AuthenticationManager authManager(UserDetailsService userDetailsService) {
+    @Bean
+    public AuthenticationManager authManager(UserDetailsService userDetailsService) {
         var authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         return new ProviderManager(authProvider);
     }
 
     @Bean
-    public InMemoryUserDetailsManager user() {
+    public UserDetailsService user() {
         return new InMemoryUserDetailsManager(
                 User.withUsername("michal")
                         .password("{noop}password")
@@ -54,18 +52,16 @@ public class SecurityConfig {
     /*
     notes:
         1. Never disable CSRF while leaving sessionManagement enabled - this leaves the app vulnerable to CSRF attacks
-        2. httpBasic shouldn't really be used. Look into formLogin instead
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeRequests( auth -> auth
+                .authorizeRequests(auth -> auth
                         .mvcMatchers("/token").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
-                .httpBasic(Customizer.withDefaults())
                 .build();
     }
 
@@ -85,4 +81,13 @@ public class SecurityConfig {
     JwtDecoder jwtDecoder() throws JOSEException {
         return NimbusJwtDecoder.withPublicKey(rsaKey.toRSAPublicKey()).build();
     }
+
+    /*
+    This will also work, but you should be making your own AuthenticationManager
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    */
 }
