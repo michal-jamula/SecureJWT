@@ -1,6 +1,6 @@
 package com.example.securejwt.controller;
 
-import com.example.securejwt.config.SecurityConfig;
+import com.example.securejwt.security.SecurityConfig;
 import com.example.securejwt.service.TokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
