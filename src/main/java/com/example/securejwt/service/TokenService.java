@@ -21,9 +21,6 @@ public class TokenService {
     }
 
 
-    /*
-    Takes Authentication (authenticated user) and generates a token for them
-     */
     public String generateToken(Authentication authentication) {
         Instant now = Instant.now();
         String scope = authentication.getAuthorities().stream()

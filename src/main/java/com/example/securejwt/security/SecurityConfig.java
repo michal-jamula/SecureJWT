@@ -8,6 +8,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -41,7 +42,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService user() {
         return new InMemoryUserDetailsManager(
-                User.withUsername("michal")
+                User.withUsername("user")
                         .password("{noop}password")
                         .authorities("read")
                         .build()
@@ -51,14 +52,15 @@ public class SecurityConfig {
 
     /*
     notes:
-        1. Never disable CSRF while leaving sessionManagement enabled - this leaves the app vulnerable to CSRF attacks
+        1. Don't disable CSRF while having a stateless session management, this opens the app to a csrf attack
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeRequests(auth -> auth
-                        .mvcMatchers("/token").permitAll()
+                        .mvcMatchers(HttpMethod.GET, "/authenticate").authenticated()
+                        .mvcMatchers(HttpMethod.POST, "/authenticate").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
@@ -83,11 +85,10 @@ public class SecurityConfig {
     }
 
     /*
-    This will also work, but you should be making your own AuthenticationManager
+    This can also work instead of authManager method, but you should be making your own AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-
     */
 }

@@ -18,22 +18,43 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-@WebMvcTest({HomeController.class, AuthController.class})
+@WebMvcTest({AuthController.class})
 @Import({SecurityConfig.class, TokenService.class})
-class HomeControllerTest {
+class AuthControllerTest {
 
     @Autowired
     MockMvc mvc;
 
 
     @Test
-    void whenUnauthenticatedThen401() throws Exception {
-        this.mvc.perform(get("/"))
-                .andExpect(status().isUnauthorized());
+    void whenBadRequestThen400() throws Exception {
+        this.mvc.perform(post("/authenticate"))
+                .andExpect(status().isBadRequest());
 
-        this.mvc.perform(get("/secure"))
-                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void whenEnteredWrongDetailsThen401() throws Exception {
+        this.mvc.perform(post("/authenticate")
+                .contentType(APPLICATION_JSON_VALUE)
+                .characterEncoding(StandardCharsets.UTF_8)
+                .content("{\"username\": \"badUser\",\"password\": \"wrongPassword\"}"))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        this.mvc.perform(post("/authenticate")
+                        .contentType(APPLICATION_JSON_VALUE)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .content("{\"ussrnam\": \"badUser\",\"asdasdasdasd\": \"wrongPassword\" ,\"asdasdasdasd\": \"wrongPassword\"}"))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        this.mvc.perform(post("/authenticate")
+                        .contentType(APPLICATION_JSON_VALUE)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .content("{\"ussrnam\": \"badUser\"}"))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
     }
 
 
@@ -41,32 +62,26 @@ class HomeControllerTest {
     @Test
     void authenticateUserAndCheckSecured200() throws Exception {
 
-        MvcResult result = this.mvc.perform(post("/token")
+        MvcResult result = this.mvc.perform(post("/authenticate")
                         .contentType(APPLICATION_JSON_VALUE)
                         .characterEncoding(StandardCharsets.UTF_8)
-                        .content("{\"username\": \"Michal\",\"password\": \"password\"}"))
+                        .content("{\"username\": \"user\",\"password\": \"password\"}"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         String token = result.getResponse().getContentAsString();
 
-        this.mvc.perform(get("/")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(content().string("Hello, michal"));
 
-        this.mvc.perform(get("/secure")
+        this.mvc.perform(get("/authenticate")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
-
     }
 
 
     @Test
     @WithMockUser
     public void mockUserStatusIsOK() throws Exception {
-        this.mvc.perform(get("/")).andExpect(status().isOk());
-
-        this.mvc.perform(get("/secure")).andExpect(status().isOk());
+        this.mvc.perform(get("/authenticate")).andExpect(status().isOk());
     }
 
 
