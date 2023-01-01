@@ -58,9 +58,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeRequests(auth -> auth
-                        .mvcMatchers(HttpMethod.GET, "/authenticate").authenticated()
-                        .mvcMatchers(HttpMethod.POST, "/authenticate").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/authenticate").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/authenticate").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
@@ -84,11 +84,4 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withPublicKey(rsaKey.toRSAPublicKey()).build();
     }
 
-    /*
-    This can also work instead of authManager method, but you should be making your own AuthenticationManager
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
-    */
 }
