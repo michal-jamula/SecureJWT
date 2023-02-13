@@ -15,7 +15,6 @@ import java.nio.charset.StandardCharsets;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({AuthController.class})
@@ -30,7 +29,11 @@ class AuthControllerTest {
     void whenBadRequestThen400() throws Exception {
         this.mvc.perform(post("/authenticate"))
                 .andExpect(status().isBadRequest());
+    }
 
+    @Test
+    void whenUnauthorizedThen401() throws Exception {
+        this.mvc.perform(get("/roles")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -82,6 +85,7 @@ class AuthControllerTest {
     @WithMockUser
     public void mockUserStatusIsOK() throws Exception {
         this.mvc.perform(get("/authenticate")).andExpect(status().isOk());
+        this.mvc.perform(get("/roles")).andExpect(status().isOk());
     }
 
 
